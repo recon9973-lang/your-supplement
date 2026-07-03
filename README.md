@@ -36,11 +36,17 @@ node engine/demo.js     # 가상 사용자로 추천 엔진 결과 확인
 ## 로드맵
 - [x] 데이터 백본 v0.1 (성분 17 / 고민 10 / 상호작용 매트릭스)
 - [x] 추천 엔진 v0.1 (점수·경고·스케줄·시너지)
+- [x] 영속 저장소 v0.1 (`server/store`, 무의존 JSON DB) — user/recommendation/my_supplement/intake_schedule
+- [x] 추천 스냅샷 저장 + 알람 스케줄러 저장소 연결 (`server/demo-e2e.js`로 E2E 검증)
 - [ ] 설문 문항 확정 → 엔진 입력 연결
 - [ ] 최저가 수집(네이버쇼핑 API) → price_offer 결합
 - [ ] 카카오 알림톡 연동(추천 전송 + 복용 알람)
-- [ ] 웹(Next.js) / 앱(Expo) 화면 구현
+- [ ] 웹(Next.js) / 앱(Expo) 화면을 실 `/api/recommend`에 연결
+- [ ] 프로덕션 DB(Postgres 등)로 `server/store` 교체
 - [ ] 식약처 공공 API로 기능성·용량 자동 검수
+
+> **로컬 E2E 검증**: `node server/demo-e2e.js` — 설문→추천 저장→내영양제 등록→알람 틱까지
+> 외부 DB·네트워크 없이 전 과정을 검증한다.
 
 ## ⚠️ 고지
 질병의 진단·치료가 아닌 **정보 제공 서비스**입니다. 복용 전 의사·약사 상담을 권장합니다.
