@@ -5,11 +5,27 @@ import Link from 'next/link';
 const DUR_LABEL = { continuous: '🟢 지속 복용', monitor: '🟡 3개월 후 점검', cyclic: '🔴 8주 후 점검' };
 const DUR_COLOR = { continuous: '#1aae39', monitor: '#dd5b00', cyclic: '#d63b3b' };
 
-/* 서버에서 엔진 호출 대신, 클라이언트에서 API 호출 (실제 구현 시 /api/recommend) */
+/* 실 추천 API(/api/recommend, 공유 엔진) 호출. 실패 시 정적 샘플로 폴백해 화면은 항상 표시. */
 async function fetchRecommendation(user) {
-  // TODO: 실제론 fetch('/api/recommend', { method:'POST', body: JSON.stringify(user) })
-  // 데모: 정적 결과 반환
-  return {
+  try {
+    const res = await fetch('/api/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.recommended) && data.recommended.length > 0) {
+        return data;
+      }
+    }
+  } catch {
+    // 네트워크·서버 오류 시 아래 샘플로 폴백
+  }
+  return SAMPLE_RESULT;
+}
+
+const SAMPLE_RESULT = {
     recommended: [
       { ingredient_id: 'vitamin_d',      name: '비타민D',         evidence_level: 3, score: 1.3,  duration_type: 'monitor',    functions: ['칼슘 흡수·뼈 형성에 필요', '면역 기능 유지'], warnings: [], best_price: { price: 12900, count: 90, per_day: 143, vendor: '네이버', product: '뉴트리원 비타민D 2000IU 90정' } },
       { ingredient_id: 'vitamin_b_complex', name: '비타민B군',    evidence_level: 3, score: 1.0,  duration_type: 'continuous', functions: ['에너지 대사에 필요', '정상적 신경 기능'], warnings: [], best_price: { price: 18900, count: 60, per_day: 315, vendor: '쿠팡', product: '고려은단 비타민B 컴플렉스 60정' } },
@@ -25,8 +41,7 @@ async function fetchRecommendation(user) {
       '🔗 비타민D + 마그네슘: 마그네슘이 비타민D 활성화에 관여 (함께 복용)',
       '🔗 비타민D + 칼슘: 뼈 형성 시너지 (함께 복용)',
     ],
-  };
-}
+};
 
 // 주요 구매처 검색 링크 (API 키·제휴 없이도 바로 동작하는 딥링크)
 // 한국에서 영양제 구매가 많은 채널 순: 쿠팡 > 네이버쇼핑 > 아이허브(직구)
