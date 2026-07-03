@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react';
 import { useLocalSearchParams, router } from 'expo-router';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { colors, spacing, typography, radius, durColor, durLabel } from '../lib/theme';
+import { fetchRecommendation } from '../lib/api';
 
-// 데모 결과 (실제: API /recommend 호출)
+// 폴백용 데모 결과 (API 미도달·오류 시 사용)
 const DEMO_RESULT = {
   recommended: [
     { ingredient_id: 'vitamin_d',      name: '비타민D',    evidence_level: 3, duration_type: 'monitor',    functions: ['칼슘 흡수·뼈 형성에 필요', '면역 기능 유지'], warnings: [], best_price: { price: 12900, vendor: '네이버쇼핑', price_per_mg: 0.11 } },
@@ -28,8 +30,22 @@ function StarBadge({ level }) {
 }
 
 export default function Result() {
-  const result = DEMO_RESULT;
+  const params = useLocalSearchParams();
+  const [result, setResult] = useState(DEMO_RESULT); // 즉시 표시 후 실데이터로 교체
   const [kakaoSent, setKakaoSent] = useState(false);
+
+  useEffect(() => {
+    let user = null;
+    try { user = params.user ? JSON.parse(params.user) : null; } catch { user = null; }
+    if (!user || !Array.isArray(user.concerns) || user.concerns.length === 0) return;
+    fetchRecommendation(user)
+      .then((data) => {
+        if (data && Array.isArray(data.recommended) && data.recommended.length > 0) {
+          setResult(data);
+        }
+      })
+      .catch(() => { /* API 미도달 시 DEMO_RESULT 유지 */ });
+  }, [params.user]);
 
   const handleKakao = () => {
     // TODO: API 호출 → sendRecommendation
@@ -156,9 +172,6 @@ export default function Result() {
     </ScrollView>
   );
 }
-
-// useState import 누락 보정
-import { useState } from 'react';
 
 const s = StyleSheet.create({
   badge: {
