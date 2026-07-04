@@ -122,8 +122,40 @@ function ReviewBox({ ingredientId }) {
 export default function ResultPage() {
   const [result, setResult] = useState(null);
   const [kakaoSent, setKakaoSent] = useState(false);
+  const [kakaoMsg, setKakaoMsg] = useState('');
 
   const [priceLive, setPriceLive] = useState(false);
+
+  async function handleKakaoSend() {
+    if (kakaoSent || !result) return;
+    setKakaoMsg('전송 중...');
+    try {
+      const raw = sessionStorage.getItem('survey_user');
+      const user = raw ? JSON.parse(raw) : {};
+      const res = await fetch('/api/kakao', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user,
+          recommendation: {
+            id: result.recommendation_id || 'preview',
+            recommended: result.recommended,
+            schedule: result.schedule,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setKakaoSent(true);
+        setKakaoMsg('');
+      } else {
+        // 키·전화번호·동의 미설정 등 — 정직하게 안내(임의 성공 표시 안 함)
+        setKakaoMsg('카카오 연동 설정이 필요해요 (전화번호·API 키). 관리자에게 문의하세요.');
+      }
+    } catch {
+      setKakaoMsg('전송에 실패했어요. 잠시 후 다시 시도해주세요.');
+    }
+  }
 
   useEffect(() => {
     const raw = sessionStorage.getItem('survey_user');
@@ -173,15 +205,19 @@ export default function ResultPage() {
 
         {/* Kakao send */}
         <button
-          onClick={() => setKakaoSent(true)}
+          onClick={handleKakaoSend}
+          disabled={kakaoSent}
           style={{
             marginTop: 24, background: '#FEE500', color: '#3A1D1D',
             border: 'none', borderRadius: 'var(--r-full)', padding: '10px 28px',
-            fontWeight: 700, fontSize: 15, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8,
+            fontWeight: 700, fontSize: 15, cursor: kakaoSent ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8,
           }}
         >
           {kakaoSent ? '✅ 카카오톡으로 전송됨' : '💬 카카오톡으로 받기'}
         </button>
+        {kakaoMsg && (
+          <p style={{ marginTop: 10, fontSize: 13, color: 'rgba(255,255,255,0.85)' }}>{kakaoMsg}</p>
+        )}
       </div>
 
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 24px' }}>
